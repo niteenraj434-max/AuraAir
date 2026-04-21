@@ -267,25 +267,33 @@ input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.2); box-sh
     .predictions { flex-direction: column; }
 }
 
-/* Hologram Theme Toggle */
-.theme-btn {
-    position: absolute;
-    top: 20px;
-    right: 75px;
-    width: 45px;
-    height: 45px;
+/* Floating Action Buttons */
+.fab-container {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 100;
+}
+.fab {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
     background: var(--glass-bg);
     backdrop-filter: blur(10px);
     border: 1px solid var(--glass-border);
-    border-radius: 50%;
+    color: var(--text-light);
     display: flex;
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 10;
-    color: var(--text-light);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
 }
-.theme-btn svg { width: 20px; height: 20px; }
+.fab svg { width: 24px; height: 24px; }
+.fab:hover { transform: scale(1.1); background: rgba(255,255,255,0.1); }
 
 /* Light Mode (Frosted White Glass) */
 body.light-mode {
