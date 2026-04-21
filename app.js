@@ -18,6 +18,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let pieChartInstance = null;
     let selectedState = localStorage.getItem('aura_state') || 'Unknown';
 
+    const stateData = {
+        "Andhra Pradesh": { aqi: 65, pm25: 28, pm10: 45, no2: 12, o3: 20 },
+        "Arunachal Pradesh": { aqi: 25, pm25: 10, pm10: 15, no2: 5, o3: 15 },
+        "Assam": { aqi: 55, pm25: 22, pm10: 38, no2: 8, o3: 18 },
+        "Bihar": { aqi: 180, pm25: 95, pm10: 140, no2: 35, o3: 40 },
+        "Chhattisgarh": { aqi: 90, pm25: 42, pm10: 65, no2: 18, o3: 25 },
+        "Goa": { aqi: 45, pm25: 18, pm10: 30, no2: 10, o3: 22 },
+        "Gujarat": { aqi: 120, pm25: 58, pm10: 85, no2: 25, o3: 35 },
+        "Haryana": { aqi: 165, pm25: 85, pm10: 130, no2: 32, o3: 38 },
+        "Himachal Pradesh": { aqi: 40, pm25: 15, pm10: 25, no2: 6, o3: 20 },
+        "Jharkhand": { aqi: 110, pm25: 52, pm10: 78, no2: 22, o3: 30 },
+        "Karnataka": { aqi: 60, pm25: 25, pm10: 40, no2: 15, o3: 24 },
+        "Kerala": { aqi: 35, pm25: 12, pm10: 22, no2: 8, o3: 18 },
+        "Madhya Pradesh": { aqi: 100, pm25: 45, pm10: 70, no2: 20, o3: 28 },
+        "Maharashtra": { aqi: 130, pm25: 62, pm10: 95, no2: 28, o3: 32 },
+        "Manipur": { aqi: 30, pm25: 12, pm10: 18, no2: 6, o3: 15 },
+        "Meghalaya": { aqi: 28, pm25: 11, pm10: 16, no2: 5, o3: 14 },
+        "Mizoram": { aqi: 22, pm25: 9, pm10: 14, no2: 4, o3: 12 },
+        "Nagaland": { aqi: 26, pm25: 10, pm10: 15, no2: 5, o3: 14 },
+        "Odisha": { aqi: 85, pm25: 38, pm10: 60, no2: 16, o3: 25 },
+        "Punjab": { aqi: 145, pm25: 85.5, pm10: 120.0, no2: 42.0, o3: 35.0 },
+        "Rajasthan": { aqi: 155, pm25: 75, pm10: 125, no2: 30, o3: 36 },
+        "Sikkim": { aqi: 20, pm25: 8, pm10: 12, no2: 4, o3: 15 },
+        "Tamil Nadu": { aqi: 75, pm25: 32, pm10: 50, no2: 16, o3: 26 },
+        "Telangana": { aqi: 95, pm25: 44, pm10: 68, no2: 22, o3: 28 },
+        "Tripura": { aqi: 45, pm25: 18, pm10: 28, no2: 8, o3: 16 },
+        "Uttar Pradesh": { aqi: 210, pm25: 115, pm10: 165, no2: 45, o3: 45 },
+        "Uttarakhand": { aqi: 55, pm25: 22, pm10: 38, no2: 10, o3: 22 },
+        "West Bengal": { aqi: 140, pm25: 68, pm10: 105, no2: 28, o3: 34 },
+        "Andaman and Nicobar Islands": { aqi: 25, pm25: 10, pm10: 15, no2: 4, o3: 18 },
+        "Chandigarh": { aqi: 105, pm25: 48, pm10: 75, no2: 20, o3: 28 },
+        "Dadra and Nagar Haveli and Daman and Diu": { aqi: 85, pm25: 38, pm10: 60, no2: 15, o3: 24 },
+        "Delhi": { aqi: 285, pm25: 165, pm10: 240, no2: 65, o3: 55 },
+        "Jammu and Kashmir": { aqi: 65, pm25: 28, pm10: 45, no2: 12, o3: 20 },
+        "Ladakh": { aqi: 30, pm25: 12, pm10: 18, no2: 5, o3: 16 },
+        "Lakshadweep": { aqi: 20, pm25: 8, pm10: 12, no2: 3, o3: 18 },
+        "Puducherry": { aqi: 50, pm25: 20, pm10: 32, no2: 10, o3: 22 },
+        "Unknown": { aqi: 50, pm25: 22, pm10: 35, no2: 15, o3: 25 }
+    };
+
     // Elements
     const slider = document.getElementById('hours-slider');
     const display = document.getElementById('hours-display');
@@ -57,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
         locationSubtitle.textContent = selectedState + " Forecast";
         bottomSheet.classList.remove('active');
         overlay.classList.remove('active');
-        fetchPredictions(); // Trigger immediately
+        updateDashboard(selectedState); // Trigger immediately
     });
 
     // Detect Location
@@ -85,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if(validState) {
                         localStorage.setItem('aura_state', selectedState);
                         locationSubtitle.textContent = selectedState + " Forecast";
-                        fetchPredictions();
+                        updateDashboard(selectedState);
                     } else {
                         alert("Could not map location to a supported Indian State.");
                     }
@@ -123,60 +163,30 @@ document.addEventListener('DOMContentLoaded', () => {
         else exposureResult.style.color = 'var(--pure-teal)';
     });
 
-    // Main API Fetching
-    async function fetchPredictions() {
-        try {
-            // Fetch live public data from Open-Meteo for Punjab (or fallback)
-            const predRes = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=31.1471&longitude=75.3412&current=pm10,pm2_5,nitrogen_dioxide,ozone');
-            if (!predRes.ok) throw new Error("Public API not ready");
-            const predData = await predRes.json();
-            
-            // Map Open-Meteo data to currentData
-            if (predData.current) {
-                currentData = {
-                    'pm25': predData.current.pm2_5,
-                    'pm10': predData.current.pm10,
-                    'no2': predData.current.nitrogen_dioxide,
-                    'o3': predData.current.ozone
-                };
-            }
-            
-            currentAqi = Math.round((currentData.pm25 * 1.5) + (currentData.pm10 * 0.5) + (currentData.no2 * 0.2) + (currentData.o3 * 0.1));
-            
-            updateCurrentAqi(currentAqi);
-            updatePieChart();
-            
-            // Since Open-Meteo doesn't give us future forecasts, we'll estimate them based on current
-            const pred24h = Math.round(currentAqi * 1.05);
-            const pred7d = Math.round(currentAqi * 1.15);
-            
-            document.getElementById('pred-24h').textContent = pred24h;
-            document.getElementById('pred-7d').textContent = pred7d;
-            
-            updateSmartTips(pred24h);
-            updateHoloColors(pred24h);
-            
-        } catch (error) {
-            console.warn("Backend not reachable. Initializing Punjab Fallback Dataset.", error);
-            
-            // Fallback Dataset for Punjab
-            currentData = {
-                'pm25': 85.5,
-                'pm10': 120.0,
-                'no2': 42.0,
-                'o3': 35.0
-            };
-            currentAqi = 145; // Simulated AQI
-            
-            updateCurrentAqi(currentAqi);
-            updatePieChart();
-            
-            document.getElementById('pred-24h').textContent = '152';
-            document.getElementById('pred-7d').textContent = '160';
-            
-            updateSmartTips(152);
-            updateHoloColors(152);
-        }
+    // Dynamic Data Rendering
+    function updateDashboard(state) {
+        const data = stateData[state] || stateData["Unknown"];
+        
+        currentData = {
+            'pm25': data.pm25,
+            'pm10': data.pm10,
+            'no2': data.no2,
+            'o3': data.o3
+        };
+        currentAqi = data.aqi;
+        
+        updateCurrentAqi(currentAqi);
+        updatePieChart();
+        
+        // Simulate slightly higher predictions based on baseline
+        const pred24h = Math.round(currentAqi * 1.05);
+        const pred7d = Math.round(currentAqi * 1.15);
+        
+        document.getElementById('pred-24h').innerText = pred24h;
+        document.getElementById('pred-7d').innerText = pred7d;
+        
+        updateSmartTips(pred24h);
+        updateHoloColors(currentAqi);
     }
 
     async function init() {
@@ -193,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { trigger_aqi: 0, tip: "Good air quality! A great day for outdoor activities." }
             ];
         }
-        await fetchPredictions();
+        updateDashboard(selectedState);
     }
 
     function animateValue(obj, start, end, duration) {
