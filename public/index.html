@@ -34,6 +34,13 @@
         </svg>
     </div>
 
+    <!-- Theme Toggle (Hologram) -->
+    <div class="theme-btn haptic-btn" id="theme-toggle" title="Toggle Hologram Mode">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="theme-icon" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+    </div>
+
     <!-- Bottom Sheet -->
     <div class="bottom-sheet-overlay" id="bottom-sheet-overlay"></div>
     <div class="bottom-sheet glass-panel" id="bottom-sheet">
@@ -146,6 +153,15 @@
                 </div>
             </section>
 
+            <!-- Eco-Action Dashboard -->
+            <section class="widget eco-action-widget" id="eco-action-section" style="display: none;">
+                <h2>Eco-Action Dashboard</h2>
+                <div class="alert-box" id="eco-alert-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <p id="eco-alert-text"></p>
+                </div>
+            </section>
+
             <!-- Exposure Tracker with Slider -->
             <section class="widget exposure-tracker">
                 <h2>Exposure Tracker</h2>
@@ -156,6 +172,17 @@
                 </div>
                 <button id="log-btn" class="haptic-btn">Log Time</button>
                 <p class="exposure-result" id="exposure-result">Estimated Exposure: 0 units</p>
+            </section>
+
+            <!-- AI System Log Terminal -->
+            <section class="ai-terminal">
+                <div class="terminal-header">
+                    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                    <span class="term-title">AURA_CORE_V2.0</span>
+                </div>
+                <div class="terminal-body" id="terminal-log">
+                    <!-- Logs injected by JS -->
+                </div>
             </section>
         </main>
     </div>

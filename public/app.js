@@ -1,64 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Current environmental base data
-    let currentData = {
-        'temperature': 24.5,
-        'humidity': 60.0,
-        'day_of_week': 4,
-        'aqi_lag_1': 55,
-        'aqi_lag_2': 50,
-        'aqi_lag_3': 48,
-        'pm25': 22.0,
-        'pm10': 35.0,
-        'no2': 15.0,
-        'so2': 25.0
-    };
-
     let currentAqi = 0;
-    let tips = [];
     let pieChartInstance = null;
     let selectedState = localStorage.getItem('aura_state') || 'Unknown';
-
-    const OPENAQ_URL = 'https://api.openaq.org/v2/latest?country=IN&limit=200';
-
-    const stateToCity = {
-        "Andhra Pradesh": "visakhapatnam",
-        "Arunachal Pradesh": "itanagar",
-        "Assam": "guwahati",
-        "Bihar": "patna",
-        "Chhattisgarh": "raipur",
-        "Goa": "panaji",
-        "Gujarat": "ahmedabad",
-        "Haryana": "gurugram",
-        "Himachal Pradesh": "shimla",
-        "Jharkhand": "ranchi",
-        "Karnataka": "bengaluru",
-        "Kerala": "thiruvananthapuram",
-        "Madhya Pradesh": "bhopal",
-        "Maharashtra": "mumbai",
-        "Manipur": "imphal",
-        "Meghalaya": "shillong",
-        "Mizoram": "aizawl",
-        "Nagaland": "kohima",
-        "Odisha": "bhubaneswar",
-        "Punjab": "chandigarh",
-        "Rajasthan": "jaipur",
-        "Sikkim": "gangtok",
-        "Tamil Nadu": "chennai",
-        "Telangana": "hyderabad",
-        "Tripura": "agartala",
-        "Uttar Pradesh": "lucknow",
-        "Uttarakhand": "dehradun",
-        "West Bengal": "kolkata",
-        "Andaman and Nicobar Islands": "port blair",
-        "Chandigarh": "chandigarh",
-        "Dadra and Nagar Haveli and Daman and Diu": "daman",
-        "Delhi": "delhi",
-        "Jammu and Kashmir": "srinagar",
-        "Ladakh": "leh",
-        "Lakshadweep": "kavaratti",
-        "Puducherry": "puducherry",
-        "Unknown": "delhi"
-    };
 
     // Elements
     const slider = document.getElementById('hours-slider');
@@ -74,6 +17,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const detectBtn = document.getElementById('detect-loc-btn');
     const stateSelect = document.getElementById('state-select');
     const locationSubtitle = document.getElementById('location-subtitle');
+
+    // Theme Toggle Elements
+    const themeBtn = document.getElementById('theme-toggle');
+    let isLightMode = localStorage.getItem('aura_theme') === 'light';
+
+    if (isLightMode) document.body.classList.add('light-mode');
+
+    themeBtn.addEventListener('click', () => {
+        if ("vibrate" in navigator) navigator.vibrate(20);
+        document.body.classList.toggle('light-mode');
+        isLightMode = document.body.classList.contains('light-mode');
+        localStorage.setItem('aura_theme', isLightMode ? 'light' : 'dark');
+    });
+
+    // Terminal Element
+    const terminalLog = document.getElementById('terminal-log');
+
+    function logToTerminal(message) {
+        const p = document.createElement('p');
+        p.textContent = `> ${message}`;
+        terminalLog.appendChild(p);
+        terminalLog.scrollTop = terminalLog.scrollHeight;
+    }
 
     // UI Logic for Bottom Sheet
     settingsBtn.addEventListener('click', () => {
@@ -99,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         locationSubtitle.textContent = selectedState + " Forecast";
         bottomSheet.classList.remove('active');
         overlay.classList.remove('active');
-        updateDashboard(selectedState); // Trigger immediately
+        updateDashboard(selectedState);
     });
 
     // Detect Location
@@ -113,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     let stateName = data.address.state || 'Unknown';
                     
-                    // Verify if state is in dropdown options
                     let validState = false;
                     for(let option of stateSelect.options) {
                         if(option.value.toLowerCase() === stateName.toLowerCase()) {
@@ -134,7 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (e) {
                     alert("Error detecting location.");
                 }
-                detectBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg> Detect My Location`;
+                detectBtn.innerHTML = `Detect My Location`;
                 bottomSheet.classList.remove('active');
                 overlay.classList.remove('active');
             }, (err) => {
@@ -147,98 +112,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Haptic feedback & Slider logic
+    // Exposure Slider logic
     slider.addEventListener('input', (e) => {
         display.textContent = parseFloat(e.target.value).toFixed(1);
     });
 
     logBtn.addEventListener('click', () => {
         if ("vibrate" in navigator) navigator.vibrate(50);
-        
         const hours = parseFloat(slider.value);
         const score = Math.floor(hours * (currentAqi / 50.0));
-        
         exposureResult.textContent = `Estimated Exposure: ${score} units`;
-        
         if (score > 10) exposureResult.style.color = 'var(--toxic-red)';
         else if (score > 5) exposureResult.style.color = 'var(--hazy-amber)';
         else exposureResult.style.color = 'var(--pure-teal)';
     });
 
-    // Dynamic Data Rendering via OpenAQ
+    // Dynamic Data Fetching via Custom Node API
     async function updateDashboard(state) {
-        const city = stateToCity[state] || "delhi";
-        
+        logToTerminal(`Initializing connection to local API...`);
         try {
-            const res = await fetch(OPENAQ_URL);
+            logToTerminal(`Fetching CPCB Data for ${state}...`);
+            
+            // Switch fetch logic to our local node backend route
+            const res = await fetch(`/api/aqi/${encodeURIComponent(state)}`);
+            if (!res.ok) throw new Error("API Route Not Found or Server Offline");
             const json = await res.json();
             
-            if (!json.results) throw new Error("Fetch failed or no results");
+            logToTerminal(`Applying Regression Model...`);
+            logToTerminal(`Data parsed. Vehicle Density: ${json.vehicleDensity}/10`);
             
-            // Filter by city
-            const locationData = json.results.find(res => 
-                (res.city && res.city.toLowerCase() === city.toLowerCase()) || 
-                (res.location && res.location.toLowerCase().includes(city.toLowerCase()))
-            );
-
-            let pm25 = 25.0;
-            let pm10 = 40.0;
-            let no2 = 15.0;
-            let so2 = 20.0;
-
-            if (locationData && locationData.measurements) {
-                locationData.measurements.forEach(m => {
-                    if (m.parameter === 'pm25') pm25 = m.value;
-                    if (m.parameter === 'pm10') pm10 = m.value;
-                    if (m.parameter === 'no2') no2 = m.value;
-                    if (m.parameter === 'so2') so2 = m.value;
-                });
-            }
-
-            currentData = {
-                'pm25': pm25,
-                'pm10': pm10,
-                'no2': no2,
-                'so2': so2
-            };
-            
-            // Map the value of the pm25 parameter to our Breathability Score
-            currentAqi = Math.round(pm25);
+            currentAqi = json.aqi;
+            const pol = json.pollutants;
             
             updateCurrentAqi(currentAqi);
-            updatePieChart();
+            updatePieChart([pol.pm25, pol.pm10, pol.no2, pol.co]);
             
-            // Simulate slightly higher predictions based on baseline
-            const pred24h = Math.round(currentAqi * 1.05);
-            const pred7d = Math.round(currentAqi * 1.15);
-            
-            document.getElementById('pred-24h').innerText = pred24h;
-            document.getElementById('pred-7d').innerText = pred7d;
+            // Simulate 24h / 7d forecasts
+            document.getElementById('pred-24h').innerText = Math.round(currentAqi * 1.05);
+            document.getElementById('pred-7d').innerText = Math.round(currentAqi * 1.15);
             
             updateSmartTips(currentAqi);
             updateHoloColors(currentAqi);
+            updateEcoAction(currentAqi, json.state);
             
+            let statusLog = currentAqi > 150 ? 'Hazardous' : (currentAqi > 50 ? 'Moderate' : 'Good');
+            logToTerminal(`State: ${json.state} - Status: ${statusLog}.`);
+            logToTerminal(`Awareness Score updated: ${json.awarenessScore}/10.`);
+
         } catch (error) {
-            console.error("OpenAQ Fetch Error:", error);
-            document.getElementById('smart-tip-text').textContent = "OpenAQ API error or no data for this location.";
+            console.error("Backend Fetch Error:", error);
+            logToTerminal(`Error: Failed to connect to /api/aqi backend.`);
+            document.getElementById('smart-tip-text').textContent = "Server error. Is the Node.js backend running?";
         }
     }
 
-    async function init() {
-        try {
-            const tipsRes = await fetch('https://auraair-backend.onrender.com/api/tips');
-            if (!tipsRes.ok) throw new Error();
-            tips = await tipsRes.json();
-        } catch(e) {
-            console.warn("Using offline AI Tips database.");
-            tips = [
-                { trigger_aqi: 150, tip: "Hazardous! Stay indoors, keep windows closed, and use an air purifier." },
-                { trigger_aqi: 100, tip: "Unhealthy air. Consider wearing an N95 mask if you must go outside." },
-                { trigger_aqi: 50, tip: "Moderate air quality. Unusually sensitive people should reduce exertion." },
-                { trigger_aqi: 0, tip: "Good air quality! A great day for outdoor activities." }
-            ];
+    function updateEcoAction(aqi, stateName) {
+        const ecoSection = document.getElementById('eco-action-section');
+        const ecoText = document.getElementById('eco-alert-text');
+        
+        if (aqi > 120) {
+            ecoSection.style.display = 'block';
+            ecoText.textContent = `Pro-Tip: Vehicle emission levels in ${stateName} are high. Consider cycling or EVs to lower your carbon footprint.`;
+        } else {
+            ecoSection.style.display = 'none';
         }
-        updateDashboard(selectedState);
     }
 
     function animateValue(obj, start, end, duration) {
@@ -293,12 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updateSmartTips(pred24h) {
-        if (!tips.length) return;
-        const sortedTips = [...tips].sort((a, b) => b.trigger_aqi - a.trigger_aqi);
+    function updateSmartTips(aqi) {
+        const tips = [
+            { trigger_aqi: 150, tip: "Hazardous! Stay indoors, keep windows closed, and use an air purifier." },
+            { trigger_aqi: 100, tip: "Unhealthy air. Consider wearing an N95 mask if you must go outside." },
+            { trigger_aqi: 50, tip: "Moderate air quality. Unusually sensitive people should reduce exertion." },
+            { trigger_aqi: 0, tip: "Good air quality! A great day for outdoor activities." }
+        ];
         let selectedTip = "Stay hydrated and healthy!";
-        for (let t of sortedTips) {
-            if (pred24h >= t.trigger_aqi) { selectedTip = t.tip; break; }
+        for (let t of tips) {
+            if (aqi >= t.trigger_aqi) { selectedTip = t.tip; break; }
         }
         document.getElementById('smart-tip-text').textContent = selectedTip;
     }
@@ -320,24 +261,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updatePieChart() {
+    function updatePieChart(data) {
         const ctx = document.getElementById('pollution-chart').getContext('2d');
-        const data = [
-            Math.round(currentData.pm25), 
-            Math.round(currentData.pm10), 
-            Math.round(currentData.no2), 
-            Math.round(currentData.so2)
-        ];
         
         if (pieChartInstance) {
             pieChartInstance.data.datasets[0].data = data;
-            pieChartInstance.data.labels = ['PM2.5', 'PM10', 'NO2', 'SO2'];
             pieChartInstance.update();
         } else {
             pieChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['PM2.5', 'PM10', 'NO2', 'SO2'],
+                    labels: ['PM2.5 %', 'PM10 %', 'NO2 %', 'CO %'],
                     datasets: [{
                         data: data,
                         backgroundColor: [
@@ -353,8 +287,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 options: {
                     responsive: true,
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    },
                     plugins: {
-                        legend: { position: 'right', labels: { color: '#F8F9FA', font: { family: 'Outfit', size: 10 } } }
+                        legend: { position: 'right', labels: { color: '#F8F9FA', font: { family: 'Outfit', size: 10 } } },
+                        tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.raw + '%'; } } }
                     },
                     cutout: '65%'
                 }
@@ -362,5 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    init();
+    // Init
+    updateDashboard(selectedState);
 });
