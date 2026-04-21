@@ -126,20 +126,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Main API Fetching
     async function fetchPredictions() {
         try {
-            const payload = { ...currentData, state: selectedState };
-            
-            // Update this to your actual Render URL after deployment!
-            const predRes = await fetch('https://auraair-backend.onrender.com/api/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!predRes.ok) throw new Error("Backend API not ready");
+            // Fetch live public data from Open-Meteo for Punjab (or fallback)
+            const predRes = await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=31.1471&longitude=75.3412&current=pm10,pm2_5,nitrogen_dioxide,ozone');
+            if (!predRes.ok) throw new Error("Public API not ready");
             const predData = await predRes.json();
             
-            // Server returns generated deterministic environmental data back
-            if (predData.current_data) {
-                currentData = predData.current_data;
+            // Map Open-Meteo data to currentData
+            if (predData.current) {
+                currentData = {
+                    'pm25': predData.current.pm2_5,
+                    'pm10': predData.current.pm10,
+                    'no2': predData.current.nitrogen_dioxide,
+                    'o3': predData.current.ozone
+                };
             }
             
             currentAqi = Math.round((currentData.pm25 * 1.5) + (currentData.pm10 * 0.5) + (currentData.no2 * 0.2) + (currentData.o3 * 0.1));
@@ -147,11 +146,15 @@ document.addEventListener('DOMContentLoaded', () => {
             updateCurrentAqi(currentAqi);
             updatePieChart();
             
-            document.getElementById('pred-24h').textContent = predData.predicted_24h || '--';
-            document.getElementById('pred-7d').textContent = predData.predicted_7d || '--';
+            // Since Open-Meteo doesn't give us future forecasts, we'll estimate them based on current
+            const pred24h = Math.round(currentAqi * 1.05);
+            const pred7d = Math.round(currentAqi * 1.15);
             
-            updateSmartTips(predData.predicted_24h || currentAqi);
-            updateHoloColors(predData.predicted_24h || currentAqi);
+            document.getElementById('pred-24h').textContent = pred24h;
+            document.getElementById('pred-7d').textContent = pred7d;
+            
+            updateSmartTips(pred24h);
+            updateHoloColors(pred24h);
             
         } catch (error) {
             console.warn("Backend not reachable. Initializing Punjab Fallback Dataset.", error);
