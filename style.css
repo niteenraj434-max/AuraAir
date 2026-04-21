@@ -373,5 +373,78 @@ body.light-mode .widget {
 @keyframes fadeIn {
     to { opacity: 1; }
 }
+
+/* Metro Grid Widget */
+.metro-grid-widget h2 { margin-bottom: 20px; text-align: left; }
+.metro-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+@media (max-width: 1024px) {
+    .metro-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .metro-grid { grid-template-columns: 1fr; }
+}
+
+.metro-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(5px);
+    transition: transform 0.2s;
+}
+.metro-card:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.3); }
+
+/* Faint CSS line art */
+.card-art {
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.05;
+    width: 80px;
+    height: 80px;
+    color: #fff;
+    pointer-events: none;
+}
+.landmark-svg { width: 100%; height: 100%; }
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    text-align: right;
+    z-index: 1;
+}
+
+.city-name { font-size: 1rem; font-weight: 600; opacity: 0.9; margin-bottom: 5px; }
+
+.aqi-val {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* AQI Color Coding */
+.aqi-good { color: #27c93f; }
+.aqi-moderate { color: #ffbd2e; }
+.aqi-poor { color: #ff9800; }
+.aqi-hazardous { color: #ff5f56; }
+
+.card-bottom {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.weather-stat { font-size: 0.75rem; opacity: 0.6; }
 / *   H o l o g r a m   T o g g l e   * /  
  

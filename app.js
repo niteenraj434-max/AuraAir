@@ -35,8 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const accentColors = [
         { color: '#00E5FF', blob1: 'rgba(0, 229, 255, 0.3)', blob2: 'rgba(0, 150, 255, 0.2)', blob3: 'rgba(0, 200, 200, 0.25)' }, // Cyan
         { color: '#10B981', blob1: 'rgba(16, 185, 129, 0.3)', blob2: 'rgba(5, 150, 105, 0.2)', blob3: 'rgba(4, 120, 87, 0.25)' }, // Emerald
-        { color: '#8B5CF6', blob1: 'rgba(139, 92, 246, 0.3)', blob2: 'rgba(124, 58, 237, 0.2)', blob3: 'rgba(109, 40, 217, 0.25)' }, // Purple
-        { color: '#F59E0B', blob1: 'rgba(245, 158, 11, 0.3)', blob2: 'rgba(217, 119, 6, 0.2)', blob3: 'rgba(180, 83, 9, 0.25)' }   // Gold
+        { color: '#8B5CF6', blob1: 'rgba(139, 92, 246, 0.3)', blob2: 'rgba(124, 58, 237, 0.2)', blob3: 'rgba(109, 40, 217, 0.25)' }  // Purple
     ];
     let currentAccentIndex = 0;
     
@@ -150,7 +149,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Serverless Data Core
-    const AURA_DATABASE = {};
+    const AURA_DATABASE = [
+        { "city": "Ahmedabad", "aqi": 104, "temp": "29°C", "hum": "20%", "landmark": "temple-icon" },
+        { "city": "Bangalore", "aqi": 98, "temp": "27°C", "hum": "48%", "landmark": "palace-icon" },
+        { "city": "Chennai", "aqi": 53, "temp": "30°C", "hum": "84%", "landmark": "temple-tower-icon" },
+        { "city": "Hyderabad", "aqi": 79, "temp": "30°C", "hum": "40%", "landmark": "charminar-icon" },
+        { "city": "Kolkata", "aqi": 52, "temp": "29°C", "hum": "89%", "landmark": "victoria-icon" },
+        { "city": "Mumbai", "aqi": 91, "temp": "30°C", "hum": "62%", "landmark": "gateway-icon" },
+        { "city": "New Delhi", "aqi": 177, "temp": "31°C", "hum": "29%", "landmark": "india-gate-icon" },
+        { "city": "Pune", "aqi": 79, "temp": "28°C", "hum": "40%", "landmark": "fort-icon" }
+    ];
+
+    function getAqiClass(aqi) {
+        if (aqi > 150) return 'aqi-hazardous';
+        if (aqi > 100) return 'aqi-poor';
+        if (aqi > 50) return 'aqi-moderate';
+        return 'aqi-good';
+    }
+
+    function renderMetroGrid() {
+        const gridContainer = document.getElementById('metro-grid');
+        if (!gridContainer) return;
+        
+        let html = '';
+        AURA_DATABASE.forEach(data => {
+            const aqiClass = getAqiClass(data.aqi);
+            
+            // Faint SVG line art based on landmark
+            let svgArt = '';
+            if (data.landmark === 'india-gate-icon') {
+                svgArt = `<svg class="landmark-svg" viewBox="0 0 100 100"><path d="M20 90h15v-50h30v50h15v-70h-60z M35 40a15 15 0 0 1 30 0v50h-30z" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+            } else if (data.landmark === 'charminar-icon') {
+                svgArt = `<svg class="landmark-svg" viewBox="0 0 100 100"><path d="M20 90v-60h10v60 M70 90v-60h10v60 M30 50h40 M30 60h40 M40 30h20" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+            } else if (data.landmark === 'gateway-icon') {
+                svgArt = `<svg class="landmark-svg" viewBox="0 0 100 100"><path d="M10 90h80 M20 90v-50h15v50 M65 90v-50h15v50 M35 90a15 15 0 0 1 30 0" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+            } else if (data.landmark === 'victoria-icon') {
+                svgArt = `<svg class="landmark-svg" viewBox="0 0 100 100"><path d="M40 50a10 10 0 0 1 20 0v40h-20z M20 90h60 M50 20a10 10 0 0 1 0 20" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+            } else {
+                // Generic cityscape
+                svgArt = `<svg class="landmark-svg" viewBox="0 0 100 100"><path d="M10 90v-40h20v20h20v-30h20v50 M50 70v20 M70 60v30" fill="none" stroke="currentColor" stroke-width="2"/></svg>`;
+            }
+
+            html += `
+                <div class="metro-card">
+                    <div class="card-art">${svgArt}</div>
+                    <div class="card-content">
+                        <div class="card-top">
+                            <h3 class="city-name">${data.city}</h3>
+                        </div>
+                        <div class="card-middle">
+                            <span class="aqi-val ${aqiClass}">${data.aqi}</span>
+                        </div>
+                        <div class="card-bottom">
+                            <span class="weather-stat">Temp: ${data.temp}</span>
+                            <span class="weather-stat">Hum: ${data.hum}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        gridContainer.innerHTML = html;
+    }
+
+    renderMetroGrid();
 
     async function updateDashboard(state) {
         logToTerminal(`Initializing Serverless Data Core...`);
@@ -158,8 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
             logToTerminal(`Fetching Data for ${state}...`);
             logToTerminal(`Data Vault Connected.`);
             
-            // Serverless fallback logic since AURA_DATABASE is empty
-            let data = AURA_DATABASE[state];
+            // Serverless fallback logic
+            let data = AURA_DATABASE.find(d => d.city.toLowerCase() === state.toLowerCase() || (d.city.toLowerCase() === "new delhi" && state.toLowerCase() === "delhi"));
             
             if (!data) {
                 // Generate fallback data mathematically to keep chart visible
