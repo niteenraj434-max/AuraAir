@@ -36,6 +36,11 @@
 
     <!-- Floating Action Buttons (FABs) -->
     <div class="fab-container">
+        <button class="fab haptic-btn" id="fab-awareness" title="Eco-Awareness Guide">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+        </button>
         <button class="fab haptic-btn" id="fab-theme" title="Cycle Accent Color">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path>
@@ -200,6 +205,28 @@
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Awareness Modal -->
+    <div class="modal-overlay" id="awareness-modal">
+        <div class="modal glass-panel">
+            <button class="close-btn haptic-btn" id="close-modal">&times;</button>
+            <h2>Air Quality Survival Guide</h2>
+            <div class="modal-content">
+                <div class="tip-card tip-moderate">
+                    <h3>Moderate (101-200)</h3>
+                    <p>Reduce prolonged outdoor exertion. Keep indoor plants.</p>
+                </div>
+                <div class="tip-card tip-poor">
+                    <h3>Poor (201-300)</h3>
+                    <p>Wear N95 masks outdoors. Use public transport to cut emissions.</p>
+                </div>
+                <div class="tip-card tip-severe">
+                    <h3>Severe (400+)</h3>
+                    <p>Stay indoors. Use air purifiers. Zero outdoor physical activity.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="app.js"></script>

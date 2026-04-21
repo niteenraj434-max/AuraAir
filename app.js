@@ -52,6 +52,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Awareness Modal Elements
+    const fabAwareness = document.getElementById('fab-awareness');
+    const awarenessModal = document.getElementById('awareness-modal');
+    const closeModal = document.getElementById('close-modal');
+
+    if (fabAwareness && awarenessModal && closeModal) {
+        fabAwareness.addEventListener('click', () => {
+            if ("vibrate" in navigator) navigator.vibrate(20);
+            awarenessModal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', () => {
+            awarenessModal.classList.remove('active');
+        });
+
+        awarenessModal.addEventListener('click', (e) => {
+            if (e.target === awarenessModal) {
+                awarenessModal.classList.remove('active');
+            }
+        });
+    }
+
     // Terminal Element
     const terminalLog = document.getElementById('terminal-log');
 
@@ -150,14 +172,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Serverless Data Core
     const AURA_DATABASE = [
-        { "city": "Ahmedabad", "aqi": 104, "temp": "29°C", "hum": "20%", "landmark": "temple-icon" },
-        { "city": "Bangalore", "aqi": 98, "temp": "27°C", "hum": "48%", "landmark": "palace-icon" },
-        { "city": "Chennai", "aqi": 53, "temp": "30°C", "hum": "84%", "landmark": "temple-tower-icon" },
-        { "city": "Hyderabad", "aqi": 79, "temp": "30°C", "hum": "40%", "landmark": "charminar-icon" },
-        { "city": "Kolkata", "aqi": 52, "temp": "29°C", "hum": "89%", "landmark": "victoria-icon" },
-        { "city": "Mumbai", "aqi": 91, "temp": "30°C", "hum": "62%", "landmark": "gateway-icon" },
-        { "city": "New Delhi", "aqi": 177, "temp": "31°C", "hum": "29%", "landmark": "india-gate-icon" },
-        { "city": "Pune", "aqi": 79, "temp": "28°C", "hum": "40%", "landmark": "fort-icon" }
+        { "city": "Ahmedabad", "state": "Gujarat", "aqi": 104, "temp": "29°C", "hum": "20%", "landmark": "temple-icon", "pollutants": { pm25: 50, pm10: 30, no2: 15, co: 5 } },
+        { "city": "Bangalore", "state": "Karnataka", "aqi": 98, "temp": "27°C", "hum": "48%", "landmark": "palace-icon", "pollutants": { pm25: 40, pm10: 40, no2: 10, co: 10 } },
+        { "city": "Chennai", "state": "Tamil Nadu", "aqi": 53, "temp": "30°C", "hum": "84%", "landmark": "temple-tower-icon", "pollutants": { pm25: 35, pm10: 45, no2: 15, co: 5 } },
+        { "city": "Hyderabad", "state": "Telangana", "aqi": 79, "temp": "30°C", "hum": "40%", "landmark": "charminar-icon", "pollutants": { pm25: 45, pm10: 35, no2: 15, co: 5 } },
+        { "city": "Kolkata", "state": "West Bengal", "aqi": 52, "temp": "29°C", "hum": "89%", "landmark": "victoria-icon", "pollutants": { pm25: 30, pm10: 50, no2: 15, co: 5 } },
+        { "city": "Mumbai", "state": "Maharashtra", "aqi": 91, "temp": "30°C", "hum": "62%", "landmark": "gateway-icon", "pollutants": { pm25: 55, pm10: 25, no2: 15, co: 5 } },
+        { "city": "New Delhi", "state": "Delhi", "aqi": 177, "temp": "31°C", "hum": "29%", "landmark": "india-gate-icon", "pollutants": { pm25: 60, pm10: 20, no2: 15, co: 5 } },
+        { "city": "Pune", "state": "Maharashtra", "aqi": 79, "temp": "28°C", "hum": "40%", "landmark": "fort-icon", "pollutants": { pm25: 45, pm10: 35, no2: 15, co: 5 } },
+        { "city": "Chandigarh", "state": "Punjab", "aqi": 120, "temp": "26°C", "hum": "45%", "landmark": "generic", "pollutants": { pm25: 50, pm10: 30, no2: 15, co: 5 } },
+        { "city": "Panaji", "state": "Goa", "aqi": 45, "temp": "31°C", "hum": "75%", "landmark": "generic", "pollutants": { pm25: 25, pm10: 55, no2: 15, co: 5 } }
     ];
 
     function getAqiClass(aqi) {
@@ -213,14 +237,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderMetroGrid();
 
-    async function updateDashboard(state) {
-        logToTerminal(`Initializing Serverless Data Core...`);
+    async function updateDashboard(location) {
+        logToTerminal(`Fetching Data for ${location}...`);
         try {
-            logToTerminal(`Fetching Data for ${state}...`);
-            logToTerminal(`Data Vault Connected.`);
-            
             // Serverless fallback logic
-            let data = AURA_DATABASE.find(d => d.city.toLowerCase() === state.toLowerCase() || (d.city.toLowerCase() === "new delhi" && state.toLowerCase() === "delhi"));
+            let data = AURA_DATABASE.find(d => 
+                (d.state && d.state.toLowerCase() === location.toLowerCase()) || 
+                (d.city && d.city.toLowerCase() === location.toLowerCase()) ||
+                (d.city === "New Delhi" && location === "Delhi")
+            );
             
             if (!data) {
                 // Generate fallback data mathematically to keep chart visible
@@ -234,12 +259,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     pollutants: { pm25: 45, pm10: 35, no2: 15, co: 5 },
                     awarenessScore: 8,
                     vehicleDensity: 7,
-                    state: state
+                    state: location
                 };
             }
             
             currentAqi = data.aqi;
-            const pol = data.pollutants;
+            const pol = data.pollutants || { pm25: 45, pm10: 35, no2: 15, co: 5 };
             
             updateCurrentAqi(currentAqi);
             updatePieChart([pol.pm25, pol.pm10, pol.no2, pol.co]);
@@ -250,10 +275,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             updateSmartTips(currentAqi);
             updateHoloColors(currentAqi);
-            updateEcoAction(currentAqi, state);
+            updateEcoAction(currentAqi, location);
             
             let statusLog = currentAqi > 150 ? 'Hazardous' : (currentAqi > 50 ? 'Moderate' : 'Good');
-            logToTerminal(`State: ${state} - Status: ${statusLog}.`);
+            logToTerminal(`State: ${location} - Status: ${statusLog}`);
 
         } catch (error) {
             console.error("Data Vault Error:", error);
