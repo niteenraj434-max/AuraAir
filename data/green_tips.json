@@ -1,0 +1,26 @@
+[
+  {
+    "trigger_aqi": 300,
+    "tip": "Hazardous air quality! Stay indoors, keep windows closed, and use an air purifier if available."
+  },
+  {
+    "trigger_aqi": 200,
+    "tip": "Very unhealthy air. Avoid all outdoor physical activities and wear an N95 mask if you must go outside."
+  },
+  {
+    "trigger_aqi": 150,
+    "tip": "Unhealthy air quality. Sensitive groups should avoid prolonged outdoor exertion."
+  },
+  {
+    "trigger_aqi": 100,
+    "tip": "Air quality is unhealthy for sensitive groups. Limit prolonged outdoor exertion if you experience symptoms."
+  },
+  {
+    "trigger_aqi": 50,
+    "tip": "Moderate air quality. Unusually sensitive people should consider reducing prolonged or heavy exertion."
+  },
+  {
+    "trigger_aqi": 0,
+    "tip": "Good air quality! A great day for outdoor activities. Keep your indoor spaces well-ventilated."
+  }
+]
