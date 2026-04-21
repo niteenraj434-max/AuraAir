@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'pm25': 22.0,
         'pm10': 35.0,
         'no2': 15.0,
-        'o3': 25.0
+        'so2': 25.0
     };
 
     let currentAqi = 0;
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let pieChartInstance = null;
     let selectedState = localStorage.getItem('aura_state') || 'Unknown';
 
-    const WAQI_API_TOKEN = 'YOUR_API_TOKEN'; // Replace with your actual WAQI API Token!
+    const OPENAQ_URL = 'https://api.openaq.org/v2/latest?country=IN&limit=200';
 
     const stateToCity = {
         "Andhra Pradesh": "visakhapatnam",
@@ -165,26 +165,45 @@ document.addEventListener('DOMContentLoaded', () => {
         else exposureResult.style.color = 'var(--pure-teal)';
     });
 
-    // Dynamic Data Rendering via WAQI
+    // Dynamic Data Rendering via OpenAQ
     async function updateDashboard(state) {
         const city = stateToCity[state] || "delhi";
         
         try {
-            const res = await fetch(`https://api.waqi.info/feed/${city}/?token=${WAQI_API_TOKEN}`);
+            const res = await fetch(OPENAQ_URL);
             const json = await res.json();
             
-            if (json.status !== 'ok') throw new Error(json.data || "Fetch failed");
+            if (!json.results) throw new Error("Fetch failed or no results");
             
-            const data = json.data;
-            const iaqi = data.iaqi || {};
-            
+            // Filter by city
+            const locationData = json.results.find(res => 
+                (res.city && res.city.toLowerCase() === city.toLowerCase()) || 
+                (res.location && res.location.toLowerCase().includes(city.toLowerCase()))
+            );
+
+            let pm25 = 25.0;
+            let pm10 = 40.0;
+            let no2 = 15.0;
+            let so2 = 20.0;
+
+            if (locationData && locationData.measurements) {
+                locationData.measurements.forEach(m => {
+                    if (m.parameter === 'pm25') pm25 = m.value;
+                    if (m.parameter === 'pm10') pm10 = m.value;
+                    if (m.parameter === 'no2') no2 = m.value;
+                    if (m.parameter === 'so2') so2 = m.value;
+                });
+            }
+
             currentData = {
-                'pm25': iaqi.pm25 ? iaqi.pm25.v : 25.0,
-                'pm10': iaqi.pm10 ? iaqi.pm10.v : 40.0,
-                'no2': iaqi.no2 ? iaqi.no2.v : 15.0,
-                'o3': iaqi.o3 ? iaqi.o3.v : 20.0
+                'pm25': pm25,
+                'pm10': pm10,
+                'no2': no2,
+                'so2': so2
             };
-            currentAqi = data.aqi;
+            
+            // Map the value of the pm25 parameter to our Breathability Score
+            currentAqi = Math.round(pm25);
             
             updateCurrentAqi(currentAqi);
             updatePieChart();
@@ -200,8 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateHoloColors(currentAqi);
             
         } catch (error) {
-            console.error("WAQI Fetch Error:", error);
-            document.getElementById('smart-tip-text').textContent = "WAQI API error: Please check your API Token!";
+            console.error("OpenAQ Fetch Error:", error);
+            document.getElementById('smart-tip-text').textContent = "OpenAQ API error or no data for this location.";
         }
     }
 
@@ -307,17 +326,18 @@ document.addEventListener('DOMContentLoaded', () => {
             Math.round(currentData.pm25), 
             Math.round(currentData.pm10), 
             Math.round(currentData.no2), 
-            Math.round(currentData.o3)
+            Math.round(currentData.so2)
         ];
         
         if (pieChartInstance) {
             pieChartInstance.data.datasets[0].data = data;
+            pieChartInstance.data.labels = ['PM2.5', 'PM10', 'NO2', 'SO2'];
             pieChartInstance.update();
         } else {
             pieChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['PM2.5', 'PM10', 'NO2', 'O3'],
+                    labels: ['PM2.5', 'PM10', 'NO2', 'SO2'],
                     datasets: [{
                         data: data,
                         backgroundColor: [
