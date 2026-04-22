@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     let currentAqi = 0;
     let pieChartInstance = null;
+    let historyChartInstance = null;
     let selectedState = localStorage.getItem('aura_state') || 'Unknown';
 
     // Elements
@@ -268,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             updateCurrentAqi(currentAqi);
             updatePieChart([pol.pm25, pol.pm10, pol.no2, pol.co]);
+            updateHistoryChart(currentAqi);
             
             // Simulate 24h / 7d forecasts
             document.getElementById('pred-24h').innerText = Math.round(currentAqi * 1.05);
@@ -381,6 +383,88 @@ document.addEventListener('DOMContentLoaded', () => {
             root.style.setProperty('--blob2-color', theme.blob2);
             root.style.setProperty('--blob3-color', theme.blob3);
         }
+    }
+
+    function generate24HourData(baselineAQI) {
+        let labels = [];
+        let data = [];
+        let currentHour = new Date().getHours();
+        
+        for (let i = 23; i >= 0; i--) {
+            let h = currentHour - i;
+            let displayHour = h < 0 ? h + 24 : h;
+            let ampm = displayHour >= 12 ? 'PM' : 'AM';
+            let formattedHour = displayHour % 12 || 12;
+            labels.push(`${formattedHour} ${ampm}`);
+            
+            let variance = Math.floor(Math.random() * 5) - 2;
+            let aqi = Math.round(baselineAQI + (baselineAQI * 0.12 * Math.sin((displayHour * Math.PI / 12) - Math.PI / 4)) + variance);
+            data.push(Math.max(0, aqi));
+        }
+        return { labels, data };
+    }
+
+    function updateHistoryChart(baselineAQI) {
+        const { labels, data } = generate24HourData(baselineAQI);
+        const canvas = document.getElementById('aqiHistoryChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        if (historyChartInstance) {
+            historyChartInstance.destroy();
+        }
+
+        let gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(0, 255, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 255, 255, 0.0)');
+
+        historyChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Predicted AQI',
+                    data: data,
+                    borderColor: '#00FFFF',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: gradient,
+                    pointBackgroundColor: '#00FFFF',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#00FFFF'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: true,
+                        grid: { display: false },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    },
+                    y: {
+                        display: true,
+                        grid: { display: false },
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        titleColor: '#00FFFF',
+                        bodyColor: '#fff',
+                        borderColor: '#00FFFF',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
     }
 
     function updatePieChart(data) {
