@@ -288,16 +288,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function getEcoAlert(stateName, currentAQI) {
+        const northernStates = ['Punjab', 'Haryana', 'Delhi', 'Uttar Pradesh', 'Chandigarh'];
+        const coastalSouthernStates = ['Goa', 'Kerala', 'Tamil Nadu', 'Karnataka', 'Andhra Pradesh', 'Telangana'];
+        
+        if (northernStates.includes(stateName) && currentAQI > 200) {
+            return `Alert: High particulate matter in ${stateName}. If AQI exceeds 200, use N95 masks and avoid private transport.`;
+        } else if (coastalSouthernStates.includes(stateName) && currentAQI <= 50) {
+            return `Air quality in ${stateName} is optimal. Great day for outdoor activities!`;
+        } else {
+            return `Pro-Tip: Vehicle emission levels in ${stateName} contribute heavily to this AQI. Consider EVs or carpooling.`;
+        }
+    }
+
     function updateEcoAction(aqi, stateName) {
         const ecoSection = document.getElementById('eco-action-section');
         const ecoText = document.getElementById('eco-alert-text');
+        const alertIcon = document.querySelector('#eco-alert-box svg');
         
-        if (aqi > 120) {
-            ecoSection.style.display = 'block';
-            ecoText.textContent = `Pro-Tip: Vehicle emission levels in ${stateName} are high. Consider cycling or EVs to lower your carbon footprint.`;
+        ecoSection.style.display = 'block';
+        
+        // Remove animation class to reset
+        ecoText.classList.remove('slide-fade-in');
+        if (aqi > 150) {
+            alertIcon.classList.add('pulse-warning');
         } else {
-            ecoSection.style.display = 'none';
+            alertIcon.classList.remove('pulse-warning');
         }
+        
+        setTimeout(() => {
+            ecoText.textContent = getEcoAlert(stateName, aqi);
+            ecoText.classList.add('slide-fade-in');
+        }, 100);
     }
 
     function animateValue(obj, start, end, duration) {

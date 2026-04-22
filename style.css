@@ -334,8 +334,27 @@ body.light-mode .widget {
     display: flex; align-items: flex-start; gap: 15px; padding: 15px;
     background: rgba(255, 183, 3, 0.1); border-radius: 12px;
 }
-.alert-box svg { color: var(--hazy-amber); flex-shrink: 0; }
+.alert-box svg { color: var(--hazy-amber); flex-shrink: 0; transition: all 0.3s ease; }
 .alert-box p { font-size: 0.9rem; line-height: 1.5; opacity: 0.9; }
+
+@keyframes slideFadeIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseWarning {
+    0% { filter: drop-shadow(0 0 5px var(--toxic-red)); transform: scale(1); }
+    100% { filter: drop-shadow(0 0 15px var(--toxic-red)); transform: scale(1.2); }
+}
+
+.slide-fade-in {
+    animation: slideFadeIn 0.5s ease forwards;
+}
+
+.pulse-warning {
+    animation: pulseWarning 0.8s infinite alternate;
+    color: var(--toxic-red) !important;
+}
 
 /* AI System Log Terminal */
 .ai-terminal {
